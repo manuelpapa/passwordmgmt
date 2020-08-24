@@ -1,42 +1,34 @@
-const inquirer = require("inquirer");
+const {
+  askStartQuestions,
+  askSetPasswordQuestions,
+  askPasswordQuestions,
+  CHOICE_GET,
+  CHOICE_SET,
+} = require("./lib/questions");
+const { readPassword } = require("./lib/passwords");
 
-const fs = require("fs");
-const { async } = require("rxjs");
-function getPassword(password) {
-  try {
-    const data = fs.readFileSync("./passwords.json", "utf8");
-    const yourPassword = JSON.parse(data);
-    // console.log(yourPassword[password]);
-    //   console.log(data);
-    return yourPassword[password];
-  } catch (err) {
-    console.error(err);
+async function main() {
+  const { masterPassword, action } = await askStartQuestions();
+
+  if (masterPassword === "123") {
+    console.log("Master Password is correct!");
+    if (action === CHOICE_GET) {
+      console.log("Get a password");
+      const { key } = await askPasswordQuestions;
+      try {
+        const password = await readPassword(key);
+        console.log(`Your ${key} password is ${password}`);
+      } catch (error) {
+        console.error("Something went wrong 😑");
+      }
+    } else if (action === CHOICE_SET) {
+      console.log("Now set a password");
+      const { key, password } = await askSetPasswordQuestions();
+      console.log(`New Password: ${key} = ${password}`);
+    }
+  } else {
+    console.log("Master Password is incorrect!");
   }
 }
 
-const questions = [
-  {
-    type: "input",
-    name: "username",
-    message: "What's your username?",
-  },
-  {
-    type: "password",
-    name: "password",
-    message: "What's your password?",
-  },
-  {
-    type: "input",
-    name: "key",
-    message: "Which password do you need?",
-  },
-];
-
-inquirer.prompt(questions).then(async (answers) => {
-  if (answers.password === "123" && answers.username === "papa") {
-    console.log(
-      `Hi ${answers[`username`]}, your needed password for ${answers.key} is: 
-      ${await getPassword(answers.key)}.`
-    );
-  } else console.log("Your password or username is wrong");
-});
+main();
