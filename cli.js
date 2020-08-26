@@ -25,7 +25,7 @@ async function main() {
     } else if (action === CHOICE_SET) {
       console.log("Now Set a password");
       const { key, password } = await askSetPasswordQuestions();
-      await writePassword(key, password);
+      await writePassword(key, password, masterPassword);
       console.log(`New password set`);
     }
   } else {
