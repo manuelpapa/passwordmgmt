@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const {
   askStartQuestions,
   askGetPasswordQuestions,
@@ -15,15 +17,15 @@ const {
 const { encrypt, decrypt, createHash, verifyHash } = require("./lib/crypto");
 const { MongoClient } = require("mongodb");
 
-const uri =
-  "mongodb+srv://manuelpapa:tsu4mage@development.40txb.mongodb.net?retryWrites=true&w=majority";
+// const uri =
+//   "mongodb+srv://manuelpapa:tsu4mage@development.40txb.mongodb.net?retryWrites=true&w=majority";
 
-const client = new MongoClient(uri);
+const client = new MongoClient(process.env.MONGO_URI);
 
 async function main() {
   try {
     await client.connect();
-    const database = client.db("passwordmgmt");
+    const database = client.db(process.passwordmgmt);
 
     const originalMasterPassword = await readMasterPassword();
 
