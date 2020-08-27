@@ -1,14 +1,18 @@
+//MARWINS WEG
 require("dotenv").config();
 
 const express = require("express");
-const MongoClient = require("mongodb").MongoClient;
+const { MongoClient } = require("mongodb");
+const { writePassword, readPassword } = require("./lib/passwords");
+const { encrypt, decrypt } = require("./lib/crypto");
 const bodyParser = require("body-parser");
-const { readPassword } = require("./lib/passwords");
-const { decrypt } = require("./lib/crypto");
+
+const client = new MongoClient(process.env.MONGO_URI, {
+  useUnifiedTopology: true,
+});
 
 const app = express();
-app.use(bodyParser.urlencoded({ extended: true }));
-const client = new MongoClient(process.env.MONGO_URI);
+app.use(bodyParser.json());
 
 const port = 3000;
 
@@ -17,25 +21,19 @@ async function main() {
   const database = client.db(process.env.MONGO_DB_NAME);
   const masterPassword = process.env.MASTER_PASSWORD;
 
-  //dynamisch
-  app.get("/api/passwords/wifi", async (req, res) => {
-    const key = "wifi";
-    const encryptedPassword = await readPassword(key, database);
-    const password = decrypt(encryptedPassword, masterPassword);
-
-    res.send(password);
+  app.get("/api/passwords/:name", async (request, response) => {
+    const { name } = request.params;
+    const password = await readPassword(name, database);
+    const decryptedPassword = decrypt(password, masterPassword);
+    response.status(200).send(decryptedPassword);
   });
 
-  //password anlegen
-  app.post("/api/passwords/", (req, res) => {
-    res.send("123");
-  });
-
-  app.get("/", (req, res) => {
-    res.sendFile(__dirname + "/index.html");
-  });
-  app.post("/quotes", (req, res) => {
-    console.log(req.body);
+  app.post("/api/passwords", async (request, response) => {
+    console.log("POST on /api/passwords");
+    const { name, value } = request.body;
+    const encryptedPassword = encrypt(value, masterPassword);
+    await writePassword(name, encryptedPassword, database);
+    response.status(201).send("Password created 🎈");
   });
 
   app.listen(port, () => {
@@ -43,65 +41,3 @@ async function main() {
   });
 }
 main();
-
-// LEONS CODE
-// require("dotenv").config();
-
-// const express = require("express");
-// const { MongoClient } = require("mongodb");
-// const { readPassword } = require("./lib/passwords");
-// const { decrypt } = require("./lib/crypto");
-
-// const client = new MongoClient(process.env.MONGO_URI);
-
-// const app = express();
-
-// const port = 3000;
-
-// async function main() {
-//   await client.connect();
-//   const database = client.db(process.env.MONGO_DB_NAME);
-//   const masterPassword = process.env.MASTER_PASSWORD;
-
-//   //dynamisch
-//   app.get("/api/passwords/wifi", async (req, res) => {
-//     const key = "wifi";
-//     const encryptedPassword = await readPassword(key, database);
-//     const password = decrypt(encryptedPassword, masterPassword);
-
-//     res.send(password);
-//   });
-
-//   //password anlegen
-//   app.post("/api/passwords/", (req, res) => {
-//     res.send("123");
-//   });
-
-//   app.get("/", (req, res) => {
-//     res.sendFile(__dirname + "/index.html");
-//   });
-
-//   app.listen(port, () => {
-//     console.log(`Ready! App is listening on http://localhost:${port}`);
-//   });
-// }
-// main();
-
-//MEIN CODE
-// const express = require("express");
-// const bodyParser = require("body-parser");
-// const app = express();
-
-// app.use(bodyParser.urlencoded({ extended: true }));
-
-// const MongoClient = require("mongodb").MongoClient;
-// const client = new MongoClient(process.env.MONGO_URL);
-// app.listen(3000, function () {
-//   console.log("Listeining on 3000");
-// });
-// app.get("/", function (req, res) {
-//   res.sendFile(__dirname + "/index.html");
-// });
-// app.post("/quotes", (req, res) => {
-//   console.log("Hellooooooooooooooooo!");
-// });

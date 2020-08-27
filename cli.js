@@ -25,7 +25,7 @@ const client = new MongoClient(process.env.MONGO_URI);
 async function main() {
   try {
     await client.connect();
-    const database = client.db(process.passwordmgmt);
+    const database = client.db(process.MONGO_DB_NAME);
 
     const originalMasterPassword = await readMasterPassword();
 
