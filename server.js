@@ -4,6 +4,7 @@ const express = require("express");
 const { MongoClient } = require("mongodb");
 const bodyParser = require("body-parser");
 const createPasswordsRouter = require("./routes/passwords");
+const createUserRouter = require("./routes/users");
 
 const client = new MongoClient(process.env.MONGO_URI, {
   useUnifiedTopology: true,
@@ -25,7 +26,12 @@ async function main() {
     next();
   });
 
+  app.get("/", function (request, response) {
+    response.sendFile(path.join(__dirname + "/login.html"));
+  });
+
   app.use("/api/passwords", createPasswordsRouter(database, masterPassword));
+  app.use("/api/users", createUserRouter(database));
 
   app.get("/", (request, response) => {
     response.sendFile(__dirname + "/index.html");

@@ -1,30 +1,39 @@
 const express = require("express");
 const router = express.Router();
 
-function checkUser(username, password) {
-  app.post("/auth", function (request, response) {
-    var username = request.body.username;
-    var password = request.body.password;
-    if (username && password) {
-      connection.query(
-        "SELECT * FROM accounts WHERE username = ? AND password = ?",
-        [username, password],
-        function (error, results, fields) {
-          if (results.length > 0) {
-            request.session.loggedin = true;
-            request.session.username = username;
-            response.redirect("/home");
-          } else {
-            response.send("Incorrect Username and/or Password!");
-          }
-          response.end();
-        }
-      );
+require("dotenv").config();
+const { MongoClient } = require("mongodb");
+const bodyParser = require("body-parser");
+
+router.use(bodyParser.json());
+
+function createUserRouter(database) {
+  const collection = database.collection("users");
+  router.use("/", (request, response) => {
+    response.send("We're on!");
+  });
+
+  router.post("/:name", async (request, response) => {
+    const username = "manuel";
+    const password = "123";
+
+    if (username === "manuel" && password === "123") {
+      try {
+        console.log(`Request /api/users/${request.params.name}`);
+        const user = await collection.findOne({
+          username: request.params.name,
+        });
+        response.json(user);
+      } catch (error) {
+        console.error("Something went wrong!", error);
+        response.status(500).send(error.message);
+      }
     } else {
-      response.send("Please enter Username and Password!");
-      response.end();
+      console.log("Password or username incorrect");
+      response.send("Password and username incorrect");
     }
   });
+  return router;
 }
 
-module.exports = checkUser;
+module.exports = createUserRouter;
