@@ -1,39 +1,36 @@
 const express = require("express");
-const router = express.Router();
+const jwt = require("jsonwebtoken");
 
-require("dotenv").config();
-const { MongoClient } = require("mongodb");
-const bodyParser = require("body-parser");
+function createUsersRouter(database) {
+  const router = express.Router();
 
-router.use(bodyParser.json());
+  const usersCollection = database.collection("users");
 
-function createUserRouter(database) {
-  const collection = database.collection("users");
-  router.use("/", (request, response) => {
-    response.send("We're on!");
-  });
-
-  router.post("/:name", async (request, response) => {
-    const username = "manuel";
-    const password = "123";
-
-    if (username === "manuel" && password === "123") {
-      try {
-        console.log(`Request /api/users/${request.params.name}`);
-        const user = await collection.findOne({
-          username: request.params.name,
-        });
-        response.json(user);
-      } catch (error) {
-        console.error("Something went wrong!", error);
-        response.status(500).send(error.message);
+  router.post("/login", async (request, response) => {
+    try {
+      const { email, password } = request.body;
+      const user = await usersCollection.findOne({
+        email,
+        password,
+      });
+      if (!user) {
+        response.status(401).send("Wrong email or password");
+        return;
       }
-    } else {
-      console.log("Password or username incorrect");
-      response.send("Password and username incorrect");
+      const token = jwt.sign({ email }, process.env.JWT_SECRET, {
+        expiresIn: "360s",
+      });
+
+      response.setHeader("Set-Cookie", `authToken=${token};path=/;Max-Age=360`);
+
+      response.send("Logged in");
+    } catch (error) {
+      console.error(error);
+      response.status(500).send(error.message);
     }
   });
+
   return router;
 }
 
-module.exports = createUserRouter;
+module.exports = createUsersRouter;
