@@ -8,16 +8,16 @@ function createUsersRouter(database) {
 
   router.post("/login", async (request, response) => {
     try {
-      const { email, password } = request.body;
+      const { username, password } = request.body;
       const user = await usersCollection.findOne({
-        email,
+        username,
         password,
       });
       if (!user) {
-        response.status(401).send("Wrong email or password");
+        response.status(401).send("Wrong username or password");
         return;
       }
-      const token = jwt.sign({ email }, process.env.JWT_SECRET, {
+      const token = jwt.sign({ username }, process.env.JWT_SECRET, {
         expiresIn: "360s",
       });
 

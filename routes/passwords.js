@@ -1,29 +1,37 @@
 const express = require("express");
+const jwt = require("jsonwebtoken");
+const bodyParser = require("body-parser");
+const { MongoClient } = require("mongodb");
+
 const { readPassword, writePassword } = require("../lib/passwords");
 const { decrypt, encrypt } = require("../lib/crypto");
-const jwt = require("jsonwebtoken");
+
+const router = express.Router();
+router.use(bodyParser.json());
 
 function createPasswordsRouter(database, masterPassword) {
-  const router = express.Router();
+  const collection = database.collection("passwords");
+  router.get("/", (request, response) => {
+    response.send("We`re on passwords");
+  });
 
   router.get("/:name", async (request, response) => {
     try {
       const { name } = request.params;
       const { authToken } = request.cookies;
-
-      const { email } = jwt.verify(authToken, process.env.JWT_SECRET);
-      console.log(`Allow access to ${email}`);
+      const { username } = jwt.verify(authToken, process.env.JWT_SECRET);
+      console.log(`Allow access to ${username}`);
 
       const encryptedPassword = await readPassword(name, database);
       if (!encryptedPassword) {
         response.status(404).send(`Password ${name} not found`);
         return;
       }
-      const password = decrypt(encryptedPassword, masterPassword);
-
-      response.send(password);
+      const decryptedPassword = decrypt(encryptedPassword, masterPassword);
+      response.status(200).send(decryptedPassword);
     } catch (error) {
       console.error(error);
+      console.error("Something went wrong 😑", error);
       response.status(500).send(error.message);
     }
   });
